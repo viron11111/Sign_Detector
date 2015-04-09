@@ -216,7 +216,7 @@ cv2.drawContours(three, [cnt], 0, (0,255,0), 1)
 
 title = ['full image', 'edges1', 'edges2', 'edges3']
 
-image = [img_real, edges1, two, edges2]
+image = [img_real, one, two, three]
 
 for i in xrange(4):
     plt.subplot(2,2,i+1),plt.imshow(image[i],'gray')
