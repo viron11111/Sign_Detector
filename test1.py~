@@ -162,7 +162,6 @@ else:
 cnt = contours[hold]
 print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
 print len(cnt)
-print cnt
 print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
 cv2.drawContours(two, [cnt], 0, (0,255,0), 1)
 
