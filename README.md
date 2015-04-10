@@ -1,2 +1,2 @@
 # Sign_Detector
-RoboBoat 2015 Sign Detector using OPENCV
+Sign Detector using OPENCV
