@@ -14,10 +14,13 @@ cnt_hold = [0,0,0]
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
-img = cv2.imread('dock.jpg')
-img_real = cv2.imread('dock.jpg')
-img = cv2.imread('dock_simulation.png')
-img_real = cv2.imread('dock_simulation.png')
+pic = 'dock.jpg'
+pic = 'dock_simulation.png'
+
+img = cv2.imread(pic)
+img_real = cv2.imread(pic)
+img = cv2.imread(pic)
+img_real = cv2.imread(pic)
 
 img_cruciform = cv2.imread('Cruciform.jpg', 0)
 img_triangle = cv2.imread('triangle_black.png', 0)
@@ -84,19 +87,25 @@ one_a = img_real[corner[1]:corner[1]+corner[3], corner[0]:corner[0]+corner[2]]
 two_a = img[corner[5]:corner[5]+corner[7], corner[4]:corner[4]+corner[6]]
 three_a = img[corner[9]:corner[9]+corner[11], corner[8]:corner[8]+corner[10]]
 
-cv2.imwrite ("hard_image2.jpg", three_a)
+#cv2.imwrite ("hard_image2.jpg", three_a)
+cv2.imwrite ("one_a.jpg", one_a)
+cv2.imwrite ("two_a.jpg", two_a)
+cv2.imwrite ("three_a.jpg", three_a)
 
 distance_from_center = 20
 
 #********************************************************************************************** ONEEEE
 imgray = cv2.cvtColor(one_a,cv2.COLOR_BGR2GRAY)
-imgray = cv2.medianBlur(imgray,3)
+#imgray = cv2.medianBlur(imgray,3)
 
-kernel = np.ones((3,3),np.uint8)
-imgray = cv2.erode(imgray,kernel,iterations = 1)
-imgray = cv2.dilate(imgray,kernel,iterations = 1)
+#kernel = np.ones((3,3),np.uint8)
+#imgray = cv2.erode(imgray,kernel,iterations = 1)
+#imgray = cv2.dilate(imgray,kernel,iterations = 1)
 
-ret,thresh = cv2.threshold(imgray,230,255,cv2.THRESH_TOZERO_INV)
+kernel = np.ones((5,5),np.float32)/25
+imgray = cv2.filter2D(imgray,-1,kernel)
+
+ret,thresh = cv2.threshold(imgray,230,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
 contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
 width = imgray.shape[0]/2
@@ -161,13 +170,16 @@ cv2.circle(one,(length,width), 1, (255,255,0),-1)
 #********************************************************************************************** TWOOOOOO
 
 imgray = cv2.cvtColor(two_a,cv2.COLOR_BGR2GRAY)
-imgray = cv2.medianBlur(imgray,3)
+#imgray = cv2.medianBlur(imgray,3)
 
-kernel = np.ones((3,3),np.uint8)
-imgray = cv2.erode(imgray,kernel,iterations = 1)
-imgray = cv2.dilate(imgray,kernel,iterations = 1)
+#kernel = np.ones((3,3),np.uint8)
+#imgray = cv2.erode(imgray,kernel,iterations = 1)
+#imgray = cv2.dilate(imgray,kernel,iterations = 1)
 
-ret,thresh = cv2.threshold(imgray,230,255,cv2.THRESH_TOZERO_INV)
+kernel = np.ones((5,5),np.float32)/25
+imgray = cv2.filter2D(imgray,-1,kernel)
+
+ret,thresh = cv2.threshold(imgray,230,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
 contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
 width = imgray.shape[0]/2
@@ -231,13 +243,17 @@ cv2.circle(two,(length,width), 1, (255,255,0),-1)
 #********************************************************************************************** THREEEEE
 
 imgray = cv2.cvtColor(three_a,cv2.COLOR_BGR2GRAY)
-imgray = cv2.medianBlur(imgray,3)
+#imgray = cv2.medianBlur(imgray,3)
 
-kernel = np.ones((3,3),np.uint8)
-imgray = cv2.erode(imgray,kernel,iterations = 1)
-imgray = cv2.dilate(imgray,kernel,iterations = 1)
+#kernel = np.ones((3,3),np.uint8)
+#imgray = cv2.erode(imgray,kernel,iterations = 1)
+#imgray = cv2.dilate(imgray,kernel,iterations = 1)
 
-ret,thresh = cv2.threshold(imgray,230,255,cv2.THRESH_TOZERO_INV)
+kernel = np.ones((5,5),np.float32)/25
+imgray = cv2.filter2D(imgray,-1,kernel)
+
+#ret,thresh = cv2.threshold(imgray,230,255,cv2.THRESH_TOZERO_INV)
+ret,thresh = cv2.threshold(imgray,230,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
 contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
 #cv2.drawContours(three,[contours],0,(0,0,255),2)
