@@ -15,7 +15,7 @@ cnt_hold = [0,0,0]
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
-pic = 'two_a1.jpg'
+pic = 'three_a.jpg'
 #pic = 'Cruciform.jpg'
 #pic = 'cross_red.png'
 blank = cv2.imread('blank.jpg')

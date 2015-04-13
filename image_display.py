@@ -15,7 +15,7 @@ cnt_hold = [0,0,0]
 font = cv2.FONT_HERSHEY_SIMPLEX
 
 pic = 'dock.jpg'
-pic = 'dock_simulation.png'
+#pic = 'dock_simulation.png'
 
 img = cv2.imread(pic)
 img_real = cv2.imread(pic)
