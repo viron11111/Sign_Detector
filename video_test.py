@@ -3,8 +3,20 @@
 import numpy as np
 import cv2
 import math
+import cv2.cv as cv
 
 font = cv2.FONT_HERSHEY_SIMPLEX
+
+#Hough_circle values
+p1 = 100
+p2 = 13
+nr = 20
+mr = 30
+#*******************
+
+#blur Blank_gray images
+kern1 = 5
+kern2 = 5
 
 i = 0
 j = 0
@@ -76,16 +88,25 @@ while(cap.isOpened()):
     blank_one[:,0:corner[2]] = (255,255,255)
         
     if (corner[0] < corner[4] and corner[0] < corner [8]):
+        #blank_one is left        
+        one_pos = 0
+
         one_a = frame[corner[1]:corner[1]+corner[3], corner[0]:corner[0]+corner[2]]
         blank_one = np.zeros((corner[3],corner[2],3), np.uint8)
         blank_one[:,0:corner[2]] = (255,255,255)        
         cv2.putText(frame_real, "Sign1" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     elif (corner[0] > corner[4] and corner[0] > corner[8]):
+        #blank_one is right        
+        one_pos = 2
+
         three_a = frame[corner[1]:corner[1]+corner[3], corner[0]:corner[0]+corner[2]]
         blank_three = np.zeros((corner[3],corner[2],3), np.uint8)
         blank_three[:,0:corner[2]] = (255,255,255)        
         cv2.putText(frame_real, "Sign3" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     else:
+        #blank_one is center       
+        one_pos = 1
+
         two_a = frame[corner[1]:corner[1]+corner[3], corner[0]:corner[0]+corner[2]]
         blank_two = np.zeros((corner[3],corner[2],3), np.uint8)
         blank_two[:,0:corner[2]] = (255,255,255)        
@@ -93,6 +114,9 @@ while(cap.isOpened()):
         
 
     if (corner[4] < corner[0] and corner[4] < corner [8]):
+        #blank_one is left        
+        one_pos = 0
+
         one_a = frame[corner[5]:corner[5]+corner[7], corner[4]:corner[4]+corner[6]]
         blank_one = np.zeros((corner[7],corner[6],3), np.uint8)
         blank_one[:,0:corner[6]] = (255,255,255)
@@ -139,15 +163,16 @@ while(cap.isOpened()):
 #***************************************************************************************** One One One
     imgray = cv2.cvtColor(one_a,cv2.COLOR_BGR2GRAY)
 
-    kernel = np.ones((5,5),np.float32)/25
+    kernel = np.ones((kern1,kern2),np.float32)/25
     imgray = cv2.filter2D(imgray,-1,kernel)
 
+    width = imgray.shape[0]/2
+    length = imgray.shape[1]/2   
+
     ret,thresh = cv2.threshold(imgray,230,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    width = imgray.shape[0]/2
-    length = imgray.shape[1]/2    
-        
     cv2.circle(frame_real,(length + corner[0],width + corner[1]), 2, (0,255,255),-1)
 
     biggest_area = 0
@@ -181,29 +206,34 @@ while(cap.isOpened()):
             cv2.drawContours(blank_one,[biggest_cnt[0]],0,(0,0,255),1)
 
             blank_gray1 = cv2.cvtColor(blank_one,cv2.COLOR_BGR2GRAY)
-            
+
+            circles = cv2.HoughCircles(blank_gray1,cv.CV_HOUGH_GRADIENT,1, width, param1=p1,param2=p2,minRadius=nr,maxRadius=mr)          
+
             dst = cv2.goodFeaturesToTrack(blank_gray1,25,0.15,10)
             dst = np.int0(dst)
 
             for i in dst:
                 x,y = i.ravel()
                 cv2.circle(blank_gray1,(x,y),4,0,-1)
-            print len(dst)
+            #print len(dst)
 
             cv2.circle(frame_real,(cxmax + corner[0],cymax + corner[1]), 1, (0,255,0),-1)
-
-            if len(dst)==3:
-                cv2.putText(frame_real, "triangle", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
-            elif len(dst) == 12:
-                cv2.putText(frame_real, "cruciform", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+            
+            if circles != None:
+                cv2.putText(frame_real, "circle", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
             else:
-                cv2.putText(frame_real, "circle", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)                
+                if len(dst)==3:
+                    cv2.putText(frame_real, "triangle", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+                elif len(dst) == 12:
+                    cv2.putText(frame_real, "cruciform", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+                else:
+                    cv2.putText(frame_real, "circle", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)                
 
 #***************************************************************************************** Two Two Two
 
     imgray = cv2.cvtColor(two_a,cv2.COLOR_BGR2GRAY)
 
-    kernel = np.ones((5,5),np.float32)/25
+    kernel = np.ones((kern1,kern2),np.float32)/25
     imgray = cv2.filter2D(imgray,-1,kernel)
 
     ret,thresh = cv2.threshold(imgray,230,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
@@ -246,6 +276,8 @@ while(cap.isOpened()):
             cv2.drawContours(blank_two,[biggest_cnt[0]],0,(0,0,255),1)
 
             blank_gray2 = cv2.cvtColor(blank_two,cv2.COLOR_BGR2GRAY)
+
+            circles = cv2.HoughCircles(blank_gray2,cv.CV_HOUGH_GRADIENT,1, width, param1=p1,param2=p2,minRadius=nr,maxRadius=mr)
             
             dst = cv2.goodFeaturesToTrack(blank_gray2,25,0.15,10)
             dst = np.int0(dst)
@@ -253,22 +285,25 @@ while(cap.isOpened()):
             for i in dst:
                 x,y = i.ravel()
                 cv2.circle(blank_gray2,(x,y),4,0,-1)
-            print len(dst)
+            #print len(dst)
 
             cv2.circle(frame_real,(cxmax + corner[4],cymax + corner[5]), 1, (0,255,0),-1)
 
-            if len(dst)==3:
-                cv2.putText(frame_real, "triangle", (cxmax + corner[4] - 20, cymax + corner[5] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
-            elif len(dst) == 12:
-                cv2.putText(frame_real, "cruciform", (cxmax + corner[4] - 20, cymax + corner[5] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+            if circles != None:
+                cv2.putText(frame_real, "circle", (cxmax + corner[4] - 20, cymax + corner[5] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
             else:
-                cv2.putText(frame_real, "circle", (cxmax + corner[4] - 20, cymax + corner[5] + 20), font, .5,(0,0,255),1, cv2.CV_AA) 
+                if len(dst)==3:
+                    cv2.putText(frame_real, "triangle", (cxmax + corner[4] - 20, cymax + corner[5] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+                elif len(dst) == 12:
+                    cv2.putText(frame_real, "cruciform", (cxmax + corner[4] - 20, cymax + corner[5] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+                else:
+                    cv2.putText(frame_real, "circle", (cxmax + corner[4] - 20, cymax + corner[5] + 20), font, .5,(0,0,255),1, cv2.CV_AA) 
 
-#***************************************************************************************** Two Two Two
+#***************************************************************************************** Three Three Three
 
     imgray = cv2.cvtColor(three_a,cv2.COLOR_BGR2GRAY)
 
-    kernel = np.ones((5,5),np.float32)/25
+    kernel = np.ones((kern1,kern2),np.float32)/25
     imgray = cv2.filter2D(imgray,-1,kernel)
 
     ret,thresh = cv2.threshold(imgray,230,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
@@ -311,6 +346,8 @@ while(cap.isOpened()):
             cv2.drawContours(blank_three,[biggest_cnt[0]],0,(0,0,255),1)
 
             blank_gray3 = cv2.cvtColor(blank_three,cv2.COLOR_BGR2GRAY)
+
+            circles = cv2.HoughCircles(blank_gray3,cv.CV_HOUGH_GRADIENT,1, width, param1=p1,param2=p2,minRadius=nr,maxRadius=mr)
             
             dst = cv2.goodFeaturesToTrack(blank_gray3,25,0.15,10)
             dst = np.int0(dst)
@@ -318,23 +355,34 @@ while(cap.isOpened()):
             for i in dst:
                 x,y = i.ravel()
                 cv2.circle(blank_gray3,(x,y),4,0,-1)
-            print len(dst)
+            #print len(dst)
 
             cv2.circle(frame_real,(cxmax + corner[8],cymax + corner[9]), 1, (0,255,0),-1)
 
-            if len(dst)==3:
-                cv2.putText(frame_real, "triangle", (cxmax + corner[8] - 20, cymax + corner[9] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
-            elif len(dst) == 12:
-                cv2.putText(frame_real, "cruciform", (cxmax + corner[8] - 20, cymax + corner[9] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
-            else:
+            print len(dst)
+
+            if circles != None:
                 cv2.putText(frame_real, "circle", (cxmax + corner[8] - 20, cymax + corner[9] + 20), font, .5,(0,0,255),1, cv2.CV_AA) 
+            else:
+                if len(dst)==3:
+                    cv2.putText(frame_real, "triangle", (cxmax + corner[8] - 20, cymax + corner[9] + 20), font, .5,(255,0,0),1, cv2.CV_AA)
+                elif len(dst) == 12:
+                    cv2.putText(frame_real, "cruciform", (cxmax + corner[8] - 20, cymax + corner[9] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+                else:
+                    cv2.putText(frame_real, "circle", (cxmax + corner[8] - 20, cymax + corner[9] + 20), font, .5,(0,0,255),1, cv2.CV_AA) 
 
 #***************************************************************************************** Display
 	    
     cv2.imshow('actual', frame_real)
-    cv2.imshow('two', blank_gray2)    
+    cv2.imshow('two', blank_gray2)
     cv2.imshow('one', blank_gray1)
     cv2.imshow('three', blank_gray3)
+    #cv2.imwrite ("ellipse.jpg", blank_gray1)
+    #cv2.imwrite ("cruciform.jpg", blank_gray2)
+    #cv2.imwrite ("triangle.jpg", blank_gray3)
+    cv2.moveWindow('one', 20, 20)
+    cv2.moveWindow('two', 20, 180)
+    cv2.moveWindow('three', 20, 340)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
