@@ -1,0 +1,11 @@
+send function:
+    image: one_a, two_a, three_a
+    image: blank_one, blank_two, blank_three
+    hough_circle_values: p1,p2,nr,mr
+    distance_from_center
+
+return:
+    centroid
+    symbol
+    color
+

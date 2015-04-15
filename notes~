@@ -1,0 +1,7 @@
+send function:
+    image: one_a, two_a, three_a
+return:
+    centroid
+    symbol
+    color
+
