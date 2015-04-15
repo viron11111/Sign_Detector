@@ -102,11 +102,12 @@ def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
 
                             for i in dst:
                                 x,y = i.ravel()
+                            print len(dst)
 
                             if len(dst) == 3:
                                 symbol_type = 'triangle'
                             else:
-                                symbol_type = 'circle'  
+                                symbol_type = 'circle_last'  
     return (symbol_type)
 
 

@@ -102,11 +102,12 @@ def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
 
                             for i in dst:
                                 x,y = i.ravel()
+                            print dst
 
                             if len(dst) == 3:
                                 symbol_type = 'triangle'
                             else:
-                                symbol_type = 'circle'  
+                                symbol_type = 'circle_last'  
     return (symbol_type)
 
 
@@ -439,7 +440,7 @@ while(cap.isOpened()):
         if biggest_area != 0:
             #print len(biggest_cnt[0])
 
-            cv2.drawContours(blank_two,[biggest_cnt[0]],0,(0,0,255),1)
+            
 
             blank_gray2 = cv2.cvtColor(blank_two,cv2.COLOR_BGR2GRAY)
 
