@@ -15,8 +15,8 @@ mr = 30
 #*******************
 
 #blur Blank_gray images
-kern1 = 5
-kern2 = 5
+kern1 = 7
+kern2 = 7
 
 i = 0
 j = 0
@@ -164,7 +164,11 @@ while(cap.isOpened()):
     imgray = cv2.cvtColor(one_a,cv2.COLOR_BGR2GRAY)
 
     kernel = np.ones((kern1,kern2),np.float32)/25
-    imgray = cv2.filter2D(imgray,-1,kernel)
+    imgray_triangle = cv2.filter2D(imgray,-1,kernel)
+
+    #kernel = np.ones((kern1,kern2),np.float32)/25
+    #imgray_cruciform = cv2.filter2D(imgray,-1,kernel)
+
 
     width = imgray.shape[0]/2
     length = imgray.shape[1]/2   
@@ -220,21 +224,83 @@ while(cap.isOpened()):
             cv2.circle(frame_real,(cxmax + corner[0],cymax + corner[1]), 1, (0,255,0),-1)
             
             if circles != None:
-                cv2.putText(frame_real, "circle", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+                cv2.putText(blank_gray1, "circle", (cxmax+10, cymax + 25), font, .5,(0,0,255),1, cv2.CV_AA)
             else:
-                if len(dst)==3:
-                    cv2.putText(frame_real, "triangle", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
-                elif len(dst) == 12:
-                    cv2.putText(frame_real, "cruciform", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+                if len(dst) == 12:
+                    cv2.putText(blank_gray1, "cruciform", (cxmax+10, cymax + 25), font, .5,(0,0,255),1, cv2.CV_AA)
                 else:
-                    cv2.putText(frame_real, "circle", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)                
+                    #blank_one[:,0:corner[2]] = (255,255,255)
+                    ret,thresh = cv2.threshold(imgray_triangle,230,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+
+                    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+                    cv2.circle(frame_real,(length + corner[0],width + corner[1]), 2, (0,255,255),-1)
+
+                    biggest_area = 0
+                    biggest_cnt = [0]
+                    biggest_M = [0]
+                    biggest_approx = [0]
+                    cxmax = 0
+                    cymax = 0
+
+                    for cnt in contours:
+                        approx = cv2.approxPolyDP(cnt,0.1*cv2.arcLength(cnt,True),True)
+
+                        M = cv2.moments(approx)
+
+                        if M['m00'] != 0.0:
+                            area = cv2.contourArea(approx)	
+			
+                            cx = int(M['m10']/M['m00'])
+                            cy = int(M['m01']/M['m00'])
+
+                            d = math.sqrt((length-cx)*(length-cx) + (width-cy)*(width-cy))
+
+                            if area >= biggest_area and d < distance_from_center:
+                                biggest_area = area
+                                biggest_cnt[0] = cnt
+                                cxmax = cx
+                                cymax = cy
+                        if biggest_area != 0:
+                            #print len(biggest_cnt[0])
+
+                            #cv2.drawContours(blank_one,[biggest_cnt[0]],0,(0,0,255),1)
+
+                            blank_gray1 = cv2.cvtColor(blank_one,cv2.COLOR_BGR2GRAY)
+
+                            circles = cv2.HoughCircles(blank_gray1,cv.CV_HOUGH_GRADIENT,1, width, param1=p1,param2=p2,minRadius=nr,maxRadius=mr)          
+
+                            dst = cv2.goodFeaturesToTrack(blank_gray1,25,0.15,10)
+                            dst = np.int0(dst)
+
+                            for i in dst:
+                                x,y = i.ravel()
+                                #cv2.circle(blank_gray1,(x,y),4,0,-1)
+                            #print len(dst)
+
+                            #cv2.circle(frame_real,(cxmax + corner[0],cymax + corner[1]), 1, (0,255,0),-1)
+
+                            if circles != None:
+                                if len(dst) == 3:
+                                    cv2.putText(blank_gray1, "triangle", (cxmax+10, cymax + 25), font, .5,(0,0,255),1, cv2.CV_AA)
+                                else:
+                                    cv2.putText(blank_gray1, "circle", (cxmax+10, cymax + 25), font, .5,(0,0,255),1, cv2.CV_AA)  
+
+            #if circles != None:
+            #    cv2.putText(frame_real, "circle", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+            #else:
+            #    if len(dst)==3:
+            #        cv2.putText(frame_real, "triangle", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+            #    elif len(dst) == 12:
+            #        cv2.putText(frame_real, "cruciform", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+            #    else:
+            #        cv2.putText(frame_real, "circle", (cxmax + corner[0] - 20, cymax + corner[1] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
 
 #***************************************************************************************** Two Two Two
-
     imgray = cv2.cvtColor(two_a,cv2.COLOR_BGR2GRAY)
 
-    kernel = np.ones((kern1,kern2),np.float32)/25
-    imgray = cv2.filter2D(imgray,-1,kernel)
+    #kernel = np.ones((kern1,kern2),np.float32)/25
+    #imgray = cv2.filter2D(imgray,-1,kernel)
 
     ret,thresh = cv2.threshold(imgray,230,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -290,14 +356,14 @@ while(cap.isOpened()):
             cv2.circle(frame_real,(cxmax + corner[4],cymax + corner[5]), 1, (0,255,0),-1)
 
             if circles != None:
-                cv2.putText(frame_real, "circle", (cxmax + corner[4] - 20, cymax + corner[5] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+                cv2.putText(blank_gray2, "circle", (cxmax+10, cymax + 25), font, .5,(0,0,255),1, cv2.CV_AA)
             else:
                 if len(dst)==3:
-                    cv2.putText(frame_real, "triangle", (cxmax + corner[4] - 20, cymax + corner[5] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+                    cv2.putText(blank_gray2, "triangle", (cxmax+10, cymax + 25), font, .5,(0,0,255),1, cv2.CV_AA)
                 elif len(dst) == 12:
-                    cv2.putText(frame_real, "cruciform", (cxmax + corner[4] - 20, cymax + corner[5] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+                    cv2.putText(blank_gray2, "cruciform", (cxmax+10, cymax + 25), font, .5,(0,0,255),1, cv2.CV_AA)
                 else:
-                    cv2.putText(frame_real, "circle", (cxmax + corner[4] - 20, cymax + corner[5] + 20), font, .5,(0,0,255),1, cv2.CV_AA) 
+                    cv2.putText(blank_gray2, "circle", (cxmax+10, cymax + 25), font, .5,(0,0,255),1, cv2.CV_AA) 
 
 #***************************************************************************************** Three Three Three
 
@@ -362,14 +428,14 @@ while(cap.isOpened()):
             print len(dst)
 
             if circles != None:
-                cv2.putText(frame_real, "circle", (cxmax + corner[8] - 20, cymax + corner[9] + 20), font, .5,(0,0,255),1, cv2.CV_AA) 
+                cv2.putText(blank_gray3, "circle", (cxmax+10, cymax + 25), font, .5,(0,0,255),1, cv2.CV_AA)
             else:
                 if len(dst)==3:
-                    cv2.putText(frame_real, "triangle", (cxmax + corner[8] - 20, cymax + corner[9] + 20), font, .5,(255,0,0),1, cv2.CV_AA)
+                    cv2.putText(blank_gray3, "triangle", (cxmax+10, cymax + 25), font, .5,(0,0,255),1, cv2.CV_AA)
                 elif len(dst) == 12:
-                    cv2.putText(frame_real, "cruciform", (cxmax + corner[8] - 20, cymax + corner[9] + 20), font, .5,(0,0,255),1, cv2.CV_AA)
+                    cv2.putText(blank_gray3, "cruciform", (cxmax+10, cymax + 25), font, .5,(0,0,255),1, cv2.CV_AA)
                 else:
-                    cv2.putText(frame_real, "circle", (cxmax + corner[8] - 20, cymax + corner[9] + 20), font, .5,(0,0,255),1, cv2.CV_AA) 
+                    cv2.putText(blank_gray3, "circle", (cxmax+10, cymax + 25), font, .5,(0,0,255),1, cv2.CV_AA) 
 
 #***************************************************************************************** Display
 	    
