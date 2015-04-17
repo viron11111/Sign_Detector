@@ -4,6 +4,8 @@ import numpy as np
 import cv2
 import math
 import cv2.cv as cv
+import colorsys
+import time
 
 def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
     imgray = cv2.cvtColor(orig_img,cv2.COLOR_BGR2GRAY)
@@ -79,6 +81,8 @@ def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
         else:
             if len(dst) == 12:
                 symbol_type = 'cruciform'
+            elif len(dst) == 3:
+                symbol_type = 'triangle'
             else:
                 blank_img[0:height,0:width] = 255
                 
@@ -111,9 +115,9 @@ def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
 
                         d = math.sqrt((width_cent-cx)*(width_cent-cx) + (height_cent-cy)*(height_cent-cy))
 
-                        if area >= 600:
+                        #if area >= 600:
 
-                            print d                        
+                            #print d                        
 
                         if area >= biggest_area and d < distance_from_center:
                             biggest_area = area
@@ -140,15 +144,68 @@ def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
                     else:
                         symbol_type = 'circle_last'
                 else:
-                    symbol_type = 'none_found'
+                    symbol_type = 'none'
                     blank_gray = cv2.cvtColor(blank_img,cv2.COLOR_BGR2GRAY)
     else:
         symbol_type = 'none'
+        
+
+    if symbol_type != 'none':
+
+        for h,cnt in enumerate(biggest_cnt[0]):
+            mask = np.zeros(imgray.shape,np.uint8)
+            cv2.drawContours(mask,[biggest_cnt[0]],0,255,-1)
+            mean = cv2.mean(orig_img,mask = mask)
+
+        mean = colorsys.rgb_to_hsv(mean[2]/255, mean[1]/255, mean[0]/255)
+        hsv = list(mean)
+        hsv[0] = hsv[0]*360
+        #print hsv
+
+        if hsv[2] < 0.1:
+            color = 'black'
+        elif (hsv[0]<11 or hsv[0]>351) and hsv[1]>.7 and hsv[2]>.1:
+            color = 'red'
+        elif (hsv[0]>64 and hsv[0]<150) and hsv[1]>.15 and hsv[2]>.1:
+            color = 'green'
+        elif (hsv[0]>180 and hsv[0]<255) and hsv[1]>.15 and hsv[2]>.1:
+            color = 'blue'
+        else:
+            #cv2.drawContours(orig_img,[biggest_cnt[0]], 0, (255, 0, 255), -1)        
+            color = 'can\'t find'
+            #cv2.imshow('image', orig_img)
+
+    if symbol_type == 'none':
         blank_gray = cv2.cvtColor(blank_img,cv2.COLOR_BGR2GRAY)
+        cxmax = width_cent
+        cymax = height_cent
 
-    return (symbol_type, blank_gray, cxmax, cymax)
+        mask = np.zeros(imgray.shape, np.uint8)
+        cv2.circle(mask,(cxmax,cymax), 5, 255,-1)
+        mean = cv2.mean(orig_img,mask = mask)
+
+        mean = colorsys.rgb_to_hsv(mean[2]/255, mean[1]/255, mean[0]/255)
+        hsv = list(mean)
+        hsv[0] = hsv[0]*360
 
 
+        if hsv[2] < 0.1:
+            color = 'black'
+        elif (hsv[0]<11 or hsv[0]>351) and hsv[1]>.7 and hsv[2]>.1:
+            color = 'red'
+        elif (hsv[0]>64 and hsv[0]<150) and hsv[1]>.15 and hsv[2]>.1:
+            color = 'green'
+        elif (hsv[0]>180 and hsv[0]<255) and hsv[1]>.15 and hsv[2]>.1:
+            color = 'blue'
+        else:        
+            color = 'can\'t find'
+   
+    
+    #print color
+    #time.sleep(.5)
+
+    return (symbol_type, blank_gray, cxmax, cymax, color)
+    
 font = cv2.FONT_HERSHEY_SIMPLEX
 
 #Hough_circle values
@@ -171,7 +228,7 @@ sign = [0,0,0]
 cnt_hold = [0,0,0]
 
 vid = 'Dock_Simulation_30_degrees.avi'
-#vid = '/home/andy/dock_simulation_vertical.avi'
+vid = '/home/andy/dock_simulation_vertical.avi'
 
 cap = cv2.VideoCapture(vid)
 
@@ -235,7 +292,8 @@ while(cap.isOpened()):
         sign1 = find_shape(one_a, blank_one, p1, p2, nr, mr, distance_from_center)  
         if sign1[0] != 'none' or sign1[0] != 'none_found':        
             cv2.circle(frame_real,(sign1[2]+corner[0],sign1[3]+corner[1]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, sign1[0] , (sign1[2]+corner[0], sign1[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)   
+            cv2.putText(frame_real, sign1[0] , (sign1[2]+corner[0], sign1[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[0], sign1[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)   
 
         cv2.putText(frame_real, "Sign1" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     elif (corner[0] > corner[4] and corner[0] > corner[8]):
@@ -247,6 +305,7 @@ while(cap.isOpened()):
         if sign3[0] != 'none' or sign3[0] != 'none_found':        
             cv2.circle(frame_real,(sign3[2]+corner[0],sign3[3]+corner[1]), 2, (255,0,0),-1) 
             cv2.putText(frame_real, sign3[0] , (sign3[2]+corner[0], sign3[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[0], sign3[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
           
         cv2.putText(frame_real, "Sign3" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     else:
@@ -258,6 +317,7 @@ while(cap.isOpened()):
         if sign2[0] != 'none' or sign2[0] != 'none_found':        
             cv2.circle(frame_real,(sign2[2]+corner[0],sign2[3]+corner[1]), 2, (255,0,0),-1) 
             cv2.putText(frame_real, sign2[0] , (sign2[2]+corner[0], sign2[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[0], sign2[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
 
         cv2.putText(frame_real, "Sign2" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
         
@@ -266,43 +326,79 @@ while(cap.isOpened()):
         one_a = frame[corner[5]:corner[5]+corner[7], corner[4]:corner[4]+corner[6]]
         blank_one = np.zeros((corner[7],corner[6],3), np.uint8)
         blank_one[:,0:corner[6]] = (255,255,255)
-        sign1 =  find_shape(one_a, blank_one, p1, p2, nr, mr, distance_from_center)  
+        sign1 =  find_shape(one_a, blank_one, p1, p2, nr, mr, distance_from_center) 
+
+        if sign1[0] != 'none' or sign1[0] != 'none_found':        
+            cv2.circle(frame_real,(sign1[2]+corner[4],sign1[3]+corner[5]), 2, (255,0,0),-1) 
+            cv2.putText(frame_real, sign1[0] , (sign1[2]+corner[4], sign1[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[4], sign1[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+ 
         cv2.putText(frame_real, "Sign1" , (corner[4], corner[5] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     elif (corner[4] > corner[0] and corner[4] > corner[8]):
         three_a = frame[corner[5]:corner[5]+corner[7], corner[4]:corner[4]+corner[6]]
         blank_three = np.zeros((corner[7],corner[6],3), np.uint8)
         blank_three[:,0:corner[6]] = (255,255,255)
-        sign3 =  find_shape(three_a, blank_three, p1, p2, nr, mr, distance_from_center)         
+        sign3 =  find_shape(three_a, blank_three, p1, p2, nr, mr, distance_from_center) 
+     
+        if sign3[0] != 'none' or sign3[0] != 'none_found':        
+            cv2.circle(frame_real,(sign3[2]+corner[4],sign3[3]+corner[5]), 2, (255,0,0),-1) 
+            cv2.putText(frame_real, sign3[0] , (sign3[2]+corner[4], sign3[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[4], sign3[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA)     
+
         cv2.putText(frame_real, "Sign3" , (corner[4], corner[5] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     else:
         two_a = frame[corner[5]:corner[5]+corner[7], corner[4]:corner[4]+corner[6]]
         blank_two = np.zeros((corner[7],corner[6],3), np.uint8)
         blank_two[:,0:corner[6]] = (255,255,255)    
         sign2 =  find_shape(two_a, blank_two, p1, p2, nr, mr, distance_from_center)    
+
+        if sign2[0] != 'none' or sign2[0] != 'none_found':        
+            cv2.circle(frame_real,(sign2[2]+corner[4],sign2[3]+corner[5]), 2, (255,0,0),-1) 
+            cv2.putText(frame_real, sign2[0] , (sign2[2]+corner[4], sign2[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[4], sign2[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+
         cv2.putText(frame_real, "Sign2" , (corner[4], corner[5] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
 
     if (corner[8] < corner[4] and corner[8] < corner [0]):
         one_a = frame[corner[9]:corner[9]+corner[11], corner[8]:corner[8]+corner[10]]
         blank_one = np.zeros((corner[11],corner[10],3), np.uint8)
         blank_one[:,0:corner[10]] = (255,255,255)
+
+        if sign1[0] != 'none' or sign1[0] != 'none_found':        
+            cv2.circle(frame_real,(sign1[2]+corner[8],sign1[3]+corner[9]), 2, (255,0,0),-1) 
+            cv2.putText(frame_real, sign1[0] , (sign1[2]+corner[8], sign1[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[8], sign1[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+
         sign1 =  find_shape(one_a, blank_one, p1, p2, nr, mr, distance_from_center)  
         cv2.putText(frame_real, "Sign1" , (corner[8], corner[9] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     elif (corner[8] > corner[0] and corner[8] > corner[4]):
         three_a = frame[corner[9]:corner[9]+corner[11], corner[8]:corner[8]+corner[10]]
         blank_three = np.zeros((corner[11],corner[10],3), np.uint8)
         blank_three[:,0:corner[10]] = (255,255,255)
-        sign3 =  find_shape(three_a, blank_three, p1, p2, nr, mr, distance_from_center) 
+        sign3 =  find_shape(three_a, blank_three, p1, p2, nr, mr, distance_from_center)
+
+        if sign3[0] != 'none' or sign3[0] != 'none_found':        
+            cv2.circle(frame_real,(sign3[2]+corner[8],sign3[3]+corner[9]), 2, (255,0,0),-1) 
+            cv2.putText(frame_real, sign3[0] , (sign3[2]+corner[8], sign3[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[8], sign3[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+ 
         cv2.putText(frame_real, "Sign3" , (corner[8], corner[9] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     else:
         two_a = frame[corner[9]:corner[9]+corner[11], corner[8]:corner[8]+corner[10]]
         blank_two = np.zeros((corner[11],corner[10],3), np.uint8)
         blank_two[:,0:corner[10]] = (255,255,255)
         sign2 =  find_shape(two_a, blank_two, p1, p2, nr, mr, distance_from_center)
+
+        if sign2[0] != 'none' or sign2[0] != 'none_found':        
+            cv2.circle(frame_real,(sign2[2]+corner[8],sign2[3]+corner[9]), 2, (255,0,0),-1) 
+            cv2.putText(frame_real, sign2[0] , (sign2[2]+corner[8], sign2[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[8], sign2[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+
         cv2.putText(frame_real, "Sign2" , (corner[8], corner[9] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
 
-    print "sign1: " + sign1[0]
-    print "sign2: " + sign2[0]
-    print "sign3: " + sign3[0]
+    #print "sign1: " + sign1[0]
+    #print "sign2: " + sign2[0]
+    #print "sign3: " + sign3[0]
 
     cv2.imshow('actual', frame_real)
     cv2.imshow('two', sign2[1])
