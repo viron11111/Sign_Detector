@@ -224,9 +224,6 @@ j = 0
 corner = []
 distance_from_center = 10.0
 
-sign = [0,0,0]
-cnt_hold = [0,0,0]
-
 vid = 'Dock_Simulation_30_degrees.avi'
 vid = '/home/andy/dock_simulation_vertical.avi'
 
@@ -236,6 +233,9 @@ while(cap.isOpened()):
     ret, frame = cap.read()
     ret, frame_real = cap.read()
 
+    height = frame_real.shape[0]
+    width  = frame_real.shape[1]
+
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     imgray = cv2.medianBlur(gray,9)
     #cv2.imshow('distort', imgray)
@@ -244,7 +244,8 @@ while(cap.isOpened()):
     
     i = 0
 
-    sign = [0,0,0]
+    sign = [0,0,0,0,0,0]
+    cnt_hold = [0,0,0,0,0,0]
 
     while i < len(contours):
         
@@ -254,6 +255,12 @@ while(cap.isOpened()):
         area = cv2.contourArea(cnt)
 
         if area >= sign[0]:
+            sign[5] = sign[4]
+            cnt_hold[5] = cnt_hold[4]
+            sign[4] = sign[3]
+            cnt_hold[4] = cnt_hold[3]
+            sign[3] = sign[2]
+            cnt_hold[3] = cnt_hold[2]
             sign[2] = sign[1]
             cnt_hold[2] = cnt_hold[1]
             sign[1] = sign[0]
@@ -261,29 +268,79 @@ while(cap.isOpened()):
             sign[0] = area
             cnt_hold[0] = cnt
         elif area >= sign[1]:
+            sign[5] = sign[4]
+            cnt_hold[5] = cnt_hold[4]
+            sign[4] = sign[3]
+            cnt_hold[4] = cnt_hold[3]
+            sign[3] = sign[2]
+            cnt_hold[3] = cnt_hold[2]
             sign[2] = sign[1]
             cnt_hold[2] = cnt_hold[1]
             sign[1] = area
             cnt_hold[1] = cnt
         elif area >= sign[2]:
+            sign[5] = sign[4]
+            cnt_hold[5] = cnt_hold[4]
+            sign[4] = sign[3]
+            cnt_hold[4] = cnt_hold[3]
+            sign[3] = sign[2]
+            cnt_hold[3] = cnt_hold[2]
             sign[2] = area
             cnt_hold[2] = cnt
+        elif area >= sign[3]:
+            sign[5] = sign[4]
+            cnt_hold[5] = cnt_hold[4]
+            sign[4] = sign[3]
+            cnt_hold[4] = cnt_hold[3]
+            sign[3] = area
+            cnt_hold[3] = cnt
+        elif area >= sign[4]:
+            sign[5] = sign[4]
+            cnt_hold[5] = cnt_hold[4]
+            sign[4] = area
+            cnt_hold[4] = cnt
+        elif area >= sign[5]:
+            sign[5] = area
+            cnt_hold[5] = cnt
 	
         i += 1
 
     i = 0
     corner = []    
+    no_of_signs = 0
+    avg_area = np.mean(sign)
+
     for i in xrange(3):
         epsilon = 0.1*cv2.arcLength(cnt_hold[i],True)
         approx = cv2.approxPolyDP(cnt_hold[i],epsilon,True)
         x,y,w,h = cv2.boundingRect(approx)
-        corner.append(x)
-        corner.append(y)
-        corner.append(w)
-        corner.append(h)
+        if y < (height/2 + 200) and y > (height/2 - 200) and (cv2.contourArea(cnt_hold[i]) > avg_area -3500 and cv2.contourArea(cnt_hold[i]) < avg_area + 3500):        
+            corner.append(x)
+            corner.append(y)
+            corner.append(w)
+            corner.append(h)
 
-        cv2.rectangle(frame_real,(x,y),(x+w,y+h),(0,255,0),2)
-        cv2.circle(frame_real,(x,y), 2, (128,0,0),-1)
+            cv2.rectangle(frame_real,(x,y),(x+w,y+h),(0,255,0),2)
+            cv2.circle(frame_real,(x,y), 2, (128,0,0),-1)
+            no_of_signs += 1
+
+    if no_of_signs == 2:
+            x,y,w,h = width,height,0,0
+            corner.append(x)
+            corner.append(y)
+            corner.append(w)
+            corner.append(h)
+    elif no_of_signs == 1:
+            x,y,w,h = width,height,0,0
+            corner.append(x)
+            corner.append(y)
+            corner.append(w)
+            corner.append(h)
+            x,y,w,h = width,height,0,0
+            corner.append(x)
+            corner.append(y)
+            corner.append(w)
+            corner.append(h)
     
     if (corner[0] < corner[4] and corner[0] < corner [8]):
         one_a = frame[corner[1]:corner[1]+corner[3], corner[0]:corner[0]+corner[2]]

@@ -225,7 +225,7 @@ corner = []
 distance_from_center = 10.0
 
 vid = 'Dock_Simulation_30_degrees.avi'
-vid = '/home/andy/dock_simulation_vertical.avi'
+#vid = '/home/andy/dock_simulation_vertical.avi'
 
 cap = cv2.VideoCapture(vid)
 
@@ -308,11 +308,43 @@ while(cap.isOpened()):
     i = 0
     corner = []    
     no_of_signs = 0
-    for i in xrange(3):
+    avg_area = np.mean(sign)
+
+    no_of_signs = 0
+    coordsx = []
+    coordsy = []
+    z = 0
+    j = 0
+
+    for i in xrange(6):
+
+        #check if centroids of moments are close to each other
+        #************************************************************************************
+        same_moment = 0
+        M = cv2.moments(cnt_hold[i])
+        cx = int(M['m10']/M['m00'])
+        cy = int(M['m01']/M['m00'])
+        
+        d = []
+
+        numbers = len(coordsx)
+
+        for z in xrange(numbers):
+            d.append(int(math.sqrt((coordsx[z-1]-cx)*(coordsx[z-1]-cx) + (coordsy[z-1]-cy)*(coordsy[z-1]-cy))))
+        
+        for j in d:
+            if j < 60:
+                same_moment += 1
+        #************************************************************************************
+
         epsilon = 0.1*cv2.arcLength(cnt_hold[i],True)
         approx = cv2.approxPolyDP(cnt_hold[i],epsilon,True)
         x,y,w,h = cv2.boundingRect(approx)
-        if y < (height/2 + 200) and y > (height/2 - 200) and (cv2.contourArea(cnt_hold[i]) > avg_area -3500 and cv2.contourArea(cnt_hold[i]) < avg_area + 3500):        
+        
+        #check for white signs
+        if y < (height/2 + 200) and y > (height/2 - 200) and same_moment == 0 and :
+            coordsx.append(cx) #append for centroid distance checking
+            coordsy.append(cy) #append for centroid distance checking       
             corner.append(x)
             corner.append(y)
             corner.append(w)
@@ -322,6 +354,7 @@ while(cap.isOpened()):
             cv2.circle(frame_real,(x,y), 2, (128,0,0),-1)
             no_of_signs += 1
 
+    #if there are no signs or less than three signs visible
     if no_of_signs == 2:
             x,y,w,h = width,height,0,0
             corner.append(x)
@@ -339,8 +372,24 @@ while(cap.isOpened()):
             corner.append(y)
             corner.append(w)
             corner.append(h)
+    elif no_of_signs == 0:
+            x,y,w,h = width,height,0,0
+            corner.append(x)
+            corner.append(y)
+            corner.append(w)
+            corner.append(h)
+            x,y,w,h = width,height,0,0
+            corner.append(x)
+            corner.append(y)
+            corner.append(w)
+            corner.append(h)
+            x,y,w,h = width,height,0,0
+            corner.append(x)
+            corner.append(y)
+            corner.append(w)
+            corner.append(h)
     
-    if (corner[0] < corner[4] and corner[0] < corner [8]):
+    if (corner[0] < corner[4] and corner[0] < corner[8] and corner[0] != width):
         one_a = frame[corner[1]:corner[1]+corner[3], corner[0]:corner[0]+corner[2]]
         blank_one = np.zeros((corner[3],corner[2],3), np.uint8)
         blank_one[:,0:corner[2]] = (255,255,255)  
@@ -351,7 +400,7 @@ while(cap.isOpened()):
             cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[0], sign1[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)   
 
         cv2.putText(frame_real, "Sign1" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
-    elif (corner[0] > corner[4] and corner[0] > corner[8]):
+    elif (corner[0] > corner[4] and corner[0] > corner[8] and corner[0] != width):
         three_a = frame[corner[1]:corner[1]+corner[3], corner[0]:corner[0]+corner[2]]
         blank_three = np.zeros((corner[3],corner[2],3), np.uint8)
         blank_three[:,0:corner[2]] = (255,255,255)
@@ -363,7 +412,7 @@ while(cap.isOpened()):
             cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[0], sign3[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
           
         cv2.putText(frame_real, "Sign3" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
-    else:
+    elif (corner[0] != width):
         two_a = frame[corner[1]:corner[1]+corner[3], corner[0]:corner[0]+corner[2]]
         blank_two = np.zeros((corner[3],corner[2],3), np.uint8)
         blank_two[:,0:corner[2]] = (255,255,255) 
@@ -377,7 +426,7 @@ while(cap.isOpened()):
         cv2.putText(frame_real, "Sign2" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
         
 
-    if (corner[4] < corner[0] and corner[4] < corner [8]):
+    if (corner[4] < corner[0] and corner[4] < corner [8] and corner[4] != width and corner[4] != width):
         one_a = frame[corner[5]:corner[5]+corner[7], corner[4]:corner[4]+corner[6]]
         blank_one = np.zeros((corner[7],corner[6],3), np.uint8)
         blank_one[:,0:corner[6]] = (255,255,255)
@@ -389,7 +438,7 @@ while(cap.isOpened()):
             cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[4], sign1[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
  
         cv2.putText(frame_real, "Sign1" , (corner[4], corner[5] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
-    elif (corner[4] > corner[0] and corner[4] > corner[8]):
+    elif (corner[4] > corner[0] and corner[4] > corner[8] and corner[4] != width):
         three_a = frame[corner[5]:corner[5]+corner[7], corner[4]:corner[4]+corner[6]]
         blank_three = np.zeros((corner[7],corner[6],3), np.uint8)
         blank_three[:,0:corner[6]] = (255,255,255)
@@ -401,7 +450,7 @@ while(cap.isOpened()):
             cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[4], sign3[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA)     
 
         cv2.putText(frame_real, "Sign3" , (corner[4], corner[5] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
-    else:
+    elif (corner[4] != width):
         two_a = frame[corner[5]:corner[5]+corner[7], corner[4]:corner[4]+corner[6]]
         blank_two = np.zeros((corner[7],corner[6],3), np.uint8)
         blank_two[:,0:corner[6]] = (255,255,255)    
@@ -414,7 +463,7 @@ while(cap.isOpened()):
 
         cv2.putText(frame_real, "Sign2" , (corner[4], corner[5] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
 
-    if (corner[8] < corner[4] and corner[8] < corner [0]):
+    if (corner[8] < corner[4] and corner[8] < corner [0] and corner[8] != width):
         one_a = frame[corner[9]:corner[9]+corner[11], corner[8]:corner[8]+corner[10]]
         blank_one = np.zeros((corner[11],corner[10],3), np.uint8)
         blank_one[:,0:corner[10]] = (255,255,255)
@@ -426,7 +475,7 @@ while(cap.isOpened()):
 
         sign1 =  find_shape(one_a, blank_one, p1, p2, nr, mr, distance_from_center)  
         cv2.putText(frame_real, "Sign1" , (corner[8], corner[9] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
-    elif (corner[8] > corner[0] and corner[8] > corner[4]):
+    elif (corner[8] > corner[0] and corner[8] > corner[4] and corner[8] != width):
         three_a = frame[corner[9]:corner[9]+corner[11], corner[8]:corner[8]+corner[10]]
         blank_three = np.zeros((corner[11],corner[10],3), np.uint8)
         blank_three[:,0:corner[10]] = (255,255,255)
@@ -438,7 +487,7 @@ while(cap.isOpened()):
             cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[8], sign3[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
  
         cv2.putText(frame_real, "Sign3" , (corner[8], corner[9] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
-    else:
+    elif (corner[8] != width):
         two_a = frame[corner[9]:corner[9]+corner[11], corner[8]:corner[8]+corner[10]]
         blank_two = np.zeros((corner[11],corner[10],3), np.uint8)
         blank_two[:,0:corner[10]] = (255,255,255)
@@ -454,6 +503,7 @@ while(cap.isOpened()):
     #print "sign1: " + sign1[0]
     #print "sign2: " + sign2[0]
     #print "sign3: " + sign3[0]
+    cv2.putText(frame_real, ("%d"% no_of_signs) , (1600, 50), font, .75,(255,0,255),2, cv2.CV_AA)
 
     cv2.imshow('actual', frame_real)
     cv2.imshow('two', sign2[1])
