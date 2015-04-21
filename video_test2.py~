@@ -7,6 +7,8 @@ import cv2.cv as cv
 import colorsys
 import time
 
+#88264580
+
 def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
     imgray = cv2.cvtColor(orig_img,cv2.COLOR_BGR2GRAY)
 
@@ -225,7 +227,7 @@ corner = []
 distance_from_center = 10.0
 
 vid = 'Dock_Simulation_30_degrees.avi'
-#vid = '/home/andy/dock_simulation_vertical.avi'
+vid = '/home/andy/dock_simulation_vertical.avi'
 
 cap = cv2.VideoCapture(vid)
 

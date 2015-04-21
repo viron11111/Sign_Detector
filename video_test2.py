@@ -7,6 +7,9 @@ import cv2.cv as cv
 import colorsys
 import time
 
+#88264580  //37706939
+#59802
+
 def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
     imgray = cv2.cvtColor(orig_img,cv2.COLOR_BGR2GRAY)
 
@@ -225,7 +228,7 @@ corner = []
 distance_from_center = 10.0
 
 vid = 'Dock_Simulation_30_degrees.avi'
-#vid = '/home/andy/dock_simulation_vertical.avi'
+vid = '/home/andy/dock_simulation_vertical.avi'
 
 cap = cv2.VideoCapture(vid)
 
@@ -342,7 +345,7 @@ while(cap.isOpened()):
         x,y,w,h = cv2.boundingRect(approx)
         
         #check for white signs
-        if y < (height/2 + 200) and y > (height/2 - 200) and same_moment == 0 and :
+        if y < (height/2 + 200) and y > (height/2 - 200) and same_moment == 0:
             coordsx.append(cx) #append for centroid distance checking
             coordsy.append(cy) #append for centroid distance checking       
             corner.append(x)
