@@ -8,7 +8,7 @@ import colorsys
 import time
 
 #88264580  //37706939
-#59802
+#63447314   
 
 def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
     imgray = cv2.cvtColor(orig_img,cv2.COLOR_BGR2GRAY)
@@ -145,7 +145,7 @@ def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
                     if len(dst) == 3:
                         symbol_type = 'triangle'
                     else:
-                        symbol_type = 'circle_last'
+                        symbol_type = 'circle'
                 else:
                     symbol_type = 'none'
                     blank_gray = cv2.cvtColor(blank_img,cv2.COLOR_BGR2GRAY)
@@ -208,8 +208,40 @@ def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
     #time.sleep(.5)
 
     return (symbol_type, blank_gray, cxmax, cymax, color)
+
+
+#*****************************************************  Probability portion  *******************************************
+def find_prob(sign):
+    probability_sum = sign['circle']+sign['triangle']+sign['cruciform']
+
+    if probability_sum > 0.0:
+        sign_probability = {'circle': sign['circle']/probability_sum, 'triangle':sign['triangle']/probability_sum, 'cruciform':sign['cruciform']/probability_sum}
+    else:
+        sign_probability = {'circle': 0.0, 'triangle': 0.0, 'cruciform': 0.0}
+    return sign_probability
+
+def find_highest_percentage(percentages):
+    most_likely = max(percentages, key=percentages.get)
+    prcnt = percentages[most_likely]
+    
+    return most_likely, prcnt
+
+def add_sign(sign, sign_sum):
+
+    if sign != 'none':
+        sign_sum[sign] = sign_sum[sign] + 1.0 #+1 for each frame
+
+    percentage = find_prob(sign_sum)
+    sign,prcnt = find_highest_percentage(percentage)
+    return sign, prcnt, sign_sum
+
+#************************************************************************************************************************
     
 font = cv2.FONT_HERSHEY_SIMPLEX
+
+sign1_sum = {'circle': 0.0, 'triangle': 0.0, 'cruciform': 0.0} #starting values
+sign2_sum = {'circle': 0.0, 'triangle': 0.0, 'cruciform': 0.0} #starting values
+sign3_sum = {'circle': 0.0, 'triangle': 0.0, 'cruciform': 0.0} #starting values
 
 #Hough_circle values
 p1 = 100
@@ -397,9 +429,12 @@ while(cap.isOpened()):
         blank_one = np.zeros((corner[3],corner[2],3), np.uint8)
         blank_one[:,0:corner[2]] = (255,255,255)  
         sign1 = find_shape(one_a, blank_one, p1, p2, nr, mr, distance_from_center)  
+        
+        symbol1,percentage1,sign1_sum = add_sign(sign1[0], sign1_sum)
+
         if sign1[0] != 'none' or sign1[0] != 'none_found':        
             cv2.circle(frame_real,(sign1[2]+corner[0],sign1[3]+corner[1]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, sign1[0] , (sign1[2]+corner[0], sign1[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[0], sign1[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
             cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[0], sign1[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)   
 
         cv2.putText(frame_real, "Sign1" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
@@ -407,11 +442,13 @@ while(cap.isOpened()):
         three_a = frame[corner[1]:corner[1]+corner[3], corner[0]:corner[0]+corner[2]]
         blank_three = np.zeros((corner[3],corner[2],3), np.uint8)
         blank_three[:,0:corner[2]] = (255,255,255)
-        sign3 = find_shape(three_a, blank_three, p1, p2, nr, mr, distance_from_center)       
+        sign3 = find_shape(three_a, blank_three, p1, p2, nr, mr, distance_from_center)  
+
+        symbol3,percentage3,sign3_sum = add_sign(sign3[0], sign3_sum)
 
         if sign3[0] != 'none' or sign3[0] != 'none_found':        
             cv2.circle(frame_real,(sign3[2]+corner[0],sign3[3]+corner[1]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, sign3[0] , (sign3[2]+corner[0], sign3[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[0], sign3[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
             cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[0], sign3[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
           
         cv2.putText(frame_real, "Sign3" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
@@ -421,9 +458,11 @@ while(cap.isOpened()):
         blank_two[:,0:corner[2]] = (255,255,255) 
         sign2 =  find_shape(two_a, blank_two, p1, p2, nr, mr, distance_from_center)
 
+        symbol2,percentage2,sign2_sum = add_sign(sign2[0], sign2_sum)
+
         if sign2[0] != 'none' or sign2[0] != 'none_found':        
             cv2.circle(frame_real,(sign2[2]+corner[0],sign2[3]+corner[1]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, sign2[0] , (sign2[2]+corner[0], sign2[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[0], sign2[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
             cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[0], sign2[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
 
         cv2.putText(frame_real, "Sign2" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
@@ -435,9 +474,11 @@ while(cap.isOpened()):
         blank_one[:,0:corner[6]] = (255,255,255)
         sign1 =  find_shape(one_a, blank_one, p1, p2, nr, mr, distance_from_center) 
 
+        symbol1,percentage1,sign1_sum = add_sign(sign1[0], sign1_sum)
+
         if sign1[0] != 'none' or sign1[0] != 'none_found':        
             cv2.circle(frame_real,(sign1[2]+corner[4],sign1[3]+corner[5]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, sign1[0] , (sign1[2]+corner[4], sign1[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[4], sign1[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
             cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[4], sign1[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
  
         cv2.putText(frame_real, "Sign1" , (corner[4], corner[5] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
@@ -446,10 +487,12 @@ while(cap.isOpened()):
         blank_three = np.zeros((corner[7],corner[6],3), np.uint8)
         blank_three[:,0:corner[6]] = (255,255,255)
         sign3 =  find_shape(three_a, blank_three, p1, p2, nr, mr, distance_from_center) 
+
+        symbol3,percentage3,sign3_sum = add_sign(sign3[0], sign3_sum)
      
         if sign3[0] != 'none' or sign3[0] != 'none_found':        
             cv2.circle(frame_real,(sign3[2]+corner[4],sign3[3]+corner[5]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, sign3[0] , (sign3[2]+corner[4], sign3[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[4], sign3[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
             cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[4], sign3[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA)     
 
         cv2.putText(frame_real, "Sign3" , (corner[4], corner[5] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
@@ -459,9 +502,12 @@ while(cap.isOpened()):
         blank_two[:,0:corner[6]] = (255,255,255)    
         sign2 =  find_shape(two_a, blank_two, p1, p2, nr, mr, distance_from_center)    
 
+        symbol2,percentage2,sign2_sum = add_sign(sign2[0], sign2_sum)
+        print symbol2
+
         if sign2[0] != 'none' or sign2[0] != 'none_found':        
             cv2.circle(frame_real,(sign2[2]+corner[4],sign2[3]+corner[5]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, sign2[0] , (sign2[2]+corner[4], sign2[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[4], sign2[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
             cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[4], sign2[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA) 
 
         cv2.putText(frame_real, "Sign2" , (corner[4], corner[5] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
@@ -471,9 +517,11 @@ while(cap.isOpened()):
         blank_one = np.zeros((corner[11],corner[10],3), np.uint8)
         blank_one[:,0:corner[10]] = (255,255,255)
 
+        symbol1,percentage1,sign1_sum = add_sign(sign1[0], sign1_sum)
+
         if sign1[0] != 'none' or sign1[0] != 'none_found':        
             cv2.circle(frame_real,(sign1[2]+corner[8],sign1[3]+corner[9]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, sign1[0] , (sign1[2]+corner[8], sign1[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[8], sign1[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
             cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[8], sign1[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
 
         sign1 =  find_shape(one_a, blank_one, p1, p2, nr, mr, distance_from_center)  
@@ -484,9 +532,11 @@ while(cap.isOpened()):
         blank_three[:,0:corner[10]] = (255,255,255)
         sign3 =  find_shape(three_a, blank_three, p1, p2, nr, mr, distance_from_center)
 
+        symbol3,percentage3,sign3_sum = add_sign(sign3[0], sign3_sum)
+
         if sign3[0] != 'none' or sign3[0] != 'none_found':        
             cv2.circle(frame_real,(sign3[2]+corner[8],sign3[3]+corner[9]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, sign3[0] , (sign3[2]+corner[8], sign3[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[8], sign3[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
             cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[8], sign3[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
  
         cv2.putText(frame_real, "Sign3" , (corner[8], corner[9] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
@@ -496,9 +546,12 @@ while(cap.isOpened()):
         blank_two[:,0:corner[10]] = (255,255,255)
         sign2 =  find_shape(two_a, blank_two, p1, p2, nr, mr, distance_from_center)
 
+        symbol2,percentage2,sign2_sum = add_sign(sign2[0], sign2_sum)
+        print symbol2
+
         if sign2[0] != 'none' or sign2[0] != 'none_found':        
             cv2.circle(frame_real,(sign2[2]+corner[8],sign2[3]+corner[9]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, sign2[0] , (sign2[2]+corner[8], sign2[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[8], sign2[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
             cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[8], sign2[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
 
         cv2.putText(frame_real, "Sign2" , (corner[8], corner[9] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
@@ -509,12 +562,12 @@ while(cap.isOpened()):
     cv2.putText(frame_real, ("%d"% no_of_signs) , (1600, 50), font, .75,(255,0,255),2, cv2.CV_AA)
 
     cv2.imshow('actual', frame_real)
-    cv2.imshow('two', sign2[1])
+    """cv2.imshow('two', sign2[1])
     cv2.imshow('one', sign1[1])
     cv2.imshow('three', sign3[1])
     cv2.moveWindow('one', 20, 20)
     cv2.moveWindow('two', 20, 180)
-    cv2.moveWindow('three', 20, 340)
+    cv2.moveWindow('three', 20, 340)"""
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
