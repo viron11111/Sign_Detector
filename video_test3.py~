@@ -279,10 +279,14 @@ kern2 = 7
 i = 0
 j = 0
 corner = []
-distance_from_center = 10.0
+distance_from_center = 28.0
 
 vid = 'Dock_Simulation_30_degrees.avi'
 vid = '/home/andy/dock_simulation_vertical.avi'
+#vid = 'In_lab_test1.mp4'
+#vid = 'In_lab_test2.mp4'
+#vid = 'In_lab_test3.mp4'
+#vid = 'In_lab_test4.mp4'
 
 cap = cv2.VideoCapture(vid)
 
@@ -379,9 +383,14 @@ while(cap.isOpened()):
         #************************************************************************************
         same_moment = 0
         M = cv2.moments(cnt_hold[i])
-        cx = int(M['m10']/M['m00'])
-        cy = int(M['m01']/M['m00'])
-        
+
+        if (M['m00'] != 0.0):
+            cx = int(M['m10']/M['m00'])
+            cy = int(M['m01']/M['m00'])
+        else:
+            cx = 0
+            cy = 0
+
         d = []
 
         numbers = len(coordsx)
@@ -393,23 +402,24 @@ while(cap.isOpened()):
             if j < 60:
                 same_moment += 1
         #************************************************************************************
+        if (M['m00'] != 0.0):  
+            epsilon = 0.1*cv2.arcLength(cnt_hold[i],True)
+            approx = cv2.approxPolyDP(cnt_hold[i],epsilon,True)
+            x,y,w,h = cv2.boundingRect(approx)
+            
+            #check for white signs
+            if y < (height/2 + 300) and y > (height/2 - 300) and same_moment == 0:  #y values viewing area, greater values = more search area
+                coordsx.append(cx) #append for centroid distance checking
+                coordsy.append(cy) #append for centroid distance checking       
+                corner.append(x)
+                corner.append(y)
+                corner.append(w)
+                corner.append(h)
 
-        epsilon = 0.1*cv2.arcLength(cnt_hold[i],True)
-        approx = cv2.approxPolyDP(cnt_hold[i],epsilon,True)
-        x,y,w,h = cv2.boundingRect(approx)
-        
-        #check for white signs
-        if y < (height/2 + 200) and y > (height/2 - 200) and same_moment == 0:
-            coordsx.append(cx) #append for centroid distance checking
-            coordsy.append(cy) #append for centroid distance checking       
-            corner.append(x)
-            corner.append(y)
-            corner.append(w)
-            corner.append(h)
+                cv2.rectangle(frame_real,(x,y),(x+w,y+h),(0,255,0),2)
+                cv2.circle(frame_real,(x,y), 2, (128,0,0),-1)
+                no_of_signs += 1
 
-            cv2.rectangle(frame_real,(x,y),(x+w,y+h),(0,255,0),2)
-            cv2.circle(frame_real,(x,y), 2, (128,0,0),-1)
-            no_of_signs += 1
 
     #if there are no signs or less than three signs visible
     if no_of_signs == 2:
