@@ -73,82 +73,85 @@ def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
         circles = cv2.HoughCircles(blank_gray,cv.CV_HOUGH_GRADIENT,1, width, param1=p1,param2=p2,minRadius=nr,maxRadius=mr)          
 
         dst = cv2.goodFeaturesToTrack(blank_gray,25,0.15,10)
-        dst = np.int0(dst)
+        if dst != None:
+            dst = np.int0(dst)
 
-        for i in dst:
-            x,y = i.ravel()
-            cv2.circle(blank_gray,(x,y),4,0,-1)
-        
-        if circles != None:
-            symbol_type = 'circle'
-        else:
-            if len(dst) == 12:
-                symbol_type = 'cruciform'
-            elif len(dst) == 3:
-                symbol_type = 'triangle'
+            for i in dst:
+                x,y = i.ravel()
+                cv2.circle(blank_gray,(x,y),4,0,-1)
+            
+            if circles != None:
+                symbol_type = 'circle'
             else:
-                blank_img[0:height,0:width] = 255
-                
-                ret,thresh = cv2.threshold(imgray_triangle,230,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-                
-                
-                contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-                biggest_area = 0
-                biggest_cnt = [0]
-                biggest_M = [0]
-                biggest_approx = [0]
-                cxmax = 0
-                cymax = 0
-
-
-
-                for cnt in contours:
-                    approx = cv2.approxPolyDP(cnt,0.1*cv2.arcLength(cnt,True),True)
-
-                    M = cv2.moments(approx)
-
-                    if M['m00'] != 0.0:
-                        area = cv2.contourArea(approx)	
-
-                        #print area
-
-                        cx = int(M['m10']/M['m00'])
-                        cy = int(M['m01']/M['m00'])
-
-                        d = math.sqrt((width_cent-cx)*(width_cent-cx) + (height_cent-cy)*(height_cent-cy))
-
-                        #if area >= 600:
-
-                            #print d                        
-
-                        if area >= biggest_area and d < distance_from_center:
-                            biggest_area = area
-                            biggest_cnt[0] = cnt
-                            cxmax = cx
-                            cymax = cy
-                if biggest_area != 0:
-
-                    cv2.drawContours(blank_img,[biggest_cnt[0]],0,(0,0,255),1)
-
-                    blank_gray = cv2.cvtColor(blank_img,cv2.COLOR_BGR2GRAY)
-
-                    dst = cv2.goodFeaturesToTrack(blank_gray,25,0.15,10)
-                    dst = np.int0(dst)
-                
-
-
-                    for i in dst:
-                        x,y = i.ravel()
-                        cv2.circle(blank_gray,(x,y),4,0,-1)
-
-                    if len(dst) == 3:
-                        symbol_type = 'triangle'
-                    else:
-                        symbol_type = 'circle'
+                if len(dst) == 12:
+                    symbol_type = 'cruciform'
+                elif len(dst) == 3:
+                    symbol_type = 'triangle'
                 else:
-                    symbol_type = 'none'
-                    blank_gray = cv2.cvtColor(blank_img,cv2.COLOR_BGR2GRAY)
+                    blank_img[0:height,0:width] = 255
+                    
+                    ret,thresh = cv2.threshold(imgray_triangle,230,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+                    
+                    
+                    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+                    biggest_area = 0
+                    biggest_cnt = [0]
+                    biggest_M = [0]
+                    biggest_approx = [0]
+                    cxmax = 0
+                    cymax = 0
+
+
+
+                    for cnt in contours:
+                        approx = cv2.approxPolyDP(cnt,0.1*cv2.arcLength(cnt,True),True)
+
+                        M = cv2.moments(approx)
+
+                        if M['m00'] != 0.0:
+                            area = cv2.contourArea(approx)	
+
+                            #print area
+
+                            cx = int(M['m10']/M['m00'])
+                            cy = int(M['m01']/M['m00'])
+
+                            d = math.sqrt((width_cent-cx)*(width_cent-cx) + (height_cent-cy)*(height_cent-cy))
+
+                            #if area >= 600:
+
+                                #print d                        
+
+                            if area >= biggest_area and d < distance_from_center:
+                                biggest_area = area
+                                biggest_cnt[0] = cnt
+                                cxmax = cx
+                                cymax = cy
+                    if biggest_area != 0:
+
+                        cv2.drawContours(blank_img,[biggest_cnt[0]],0,(0,0,255),1)
+
+                        blank_gray = cv2.cvtColor(blank_img,cv2.COLOR_BGR2GRAY)
+
+                        dst = cv2.goodFeaturesToTrack(blank_gray,25,0.15,10)
+                        dst = np.int0(dst)
+                    
+
+
+                        for i in dst:
+                            x,y = i.ravel()
+                            cv2.circle(blank_gray,(x,y),4,0,-1)
+
+                        if len(dst) == 3:
+                            symbol_type = 'triangle'
+                        else:
+                            symbol_type = 'circle'
+                    else:
+                        symbol_type = 'none'
+                        blank_gray = cv2.cvtColor(blank_img,cv2.COLOR_BGR2GRAY)
+        else:
+            symbol_type = 'none'
     else:
         symbol_type = 'none'
         
@@ -196,7 +199,7 @@ def find_shape(orig_img, blank_img, p1, p2, nr, mr, dst_frm_cnt):
             color = 'black'
         elif (hsv[0]<11 or hsv[0]>351) and hsv[1]>.7 and hsv[2]>.1:
             color = 'red'
-        elif (hsv[0]>64 and hsv[0]<150) and hsv[1]>.15 and hsv[2]>.1:
+        elif (hsv[0]>64 and hsv[0]<180) and hsv[1]>.15 and hsv[2]>.1:
             color = 'green'
         elif (hsv[0]>180 and hsv[0]<255) and hsv[1]>.15 and hsv[2]>.1:
             color = 'blue'
@@ -253,7 +256,7 @@ def add_sign(sign, sign_sum):
     
 font = cv2.FONT_HERSHEY_SIMPLEX
 
-probability_array_depth = 10  #frames for array, 30 frames = 1 second of probability tracking
+probability_array_depth = 30  #frames for array, 30 frames = 1 second of probability tracking
 
 counter = 0
 sign1_sum = []
@@ -287,6 +290,11 @@ vid = '/home/andy/dock_simulation_vertical.avi'
 #vid = 'In_lab_test2.mp4'
 #vid = 'In_lab_test3.mp4'
 #vid = 'In_lab_test4.mp4'
+vid = 'In_lab_test5.mp4'
+#vid = 'In_lab_test6.mp4'
+#vid = 'In_lab_test7.mp4'
+#vid = 'In_lab_test8.mp4'
+#vid = 'In_lab_test9.mp4'
 
 cap = cv2.VideoCapture(vid)
 
@@ -300,7 +308,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     imgray = cv2.medianBlur(gray,9)
     #cv2.imshow('distort', imgray)
-    ret,thresh = cv2.threshold(imgray,240,255,cv2.THRESH_TOZERO)
+    ret,thresh = cv2.threshold(imgray,230,255,cv2.THRESH_TOZERO)
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     
     i = 0
@@ -405,10 +413,12 @@ while(cap.isOpened()):
         if (M['m00'] != 0.0):  
             epsilon = 0.1*cv2.arcLength(cnt_hold[i],True)
             approx = cv2.approxPolyDP(cnt_hold[i],epsilon,True)
+            area = cv2.contourArea(approx)
+            #print area
             x,y,w,h = cv2.boundingRect(approx)
             
             #check for white signs
-            if y < (height/2 + 300) and y > (height/2 - 300) and same_moment == 0:  #y values viewing area, greater values = more search area
+            if y < (height/2 + 300) and y > (height/2 - 300) and same_moment == 0 and area >= 6000.0 and area <= 70000.0:  #y values viewing area, greater values = more search area
                 coordsx.append(cx) #append for centroid distance checking
                 coordsy.append(cy) #append for centroid distance checking       
                 corner.append(x)
@@ -466,8 +476,15 @@ while(cap.isOpened()):
 
         if sign1[0] != 'none' or sign1[0] != 'none_found':        
             cv2.circle(frame_real,(sign1[2]+corner[0],sign1[3]+corner[1]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[0], sign1[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
-            cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[0], sign1[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)   
+            if sign1[4] == 'can\'t find':
+                cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[0], sign1[3]+corner[1] - 15), font, .6,(255,0,255),1, cv2.CV_AA)
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[0], sign1[3]+corner[1] + 15), font, .6,(255,0,255),1, cv2.CV_AA)
+            elif sign1[4] != 'red':            
+                cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[0], sign1[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[0], sign1[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            else:
+                cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[0], sign1[3]+corner[1] - 15), font, .6,(255,0,0),1, cv2.CV_AA)      
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[0], sign1[3]+corner[1] + 15), font, .6,(255,0,0),1, cv2.CV_AA)
 
         cv2.putText(frame_real, "Sign1" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     elif (corner[0] > corner[4] and corner[0] > corner[8] and corner[0] != width):
@@ -479,9 +496,16 @@ while(cap.isOpened()):
         symbol3,percentage3,sign3_sum = add_sign(sign3[0], sign3_sum)
 
         if sign3[0] != 'none' or sign3[0] != 'none_found':        
-            cv2.circle(frame_real,(sign3[2]+corner[0],sign3[3]+corner[1]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[0], sign3[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
-            cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[0], sign3[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            cv2.circle(frame_real,(sign3[2]+corner[0],sign3[3]+corner[1]), 2, (255,0,0),-1)
+            if sign3[4] == 'can\'t find':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[0], sign3[3]+corner[1] + 15), font, .6,(255,0,255),1, cv2.CV_AA)
+                cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[0], sign3[3]+corner[1] - 15), font, .6,(255,0,255),1, cv2.CV_AA)
+            elif sign3[4] != 'red':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[0], sign3[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
+                cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[0], sign3[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            else:
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[0], sign3[3]+corner[1] + 15), font, .6,(255,0,0),1, cv2.CV_AA)
+                cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[0], sign3[3]+corner[1] - 15), font, .6,(255,0,0),1, cv2.CV_AA)                
           
         cv2.putText(frame_real, "Sign3" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     elif (corner[0] != width):
@@ -494,8 +518,15 @@ while(cap.isOpened()):
 
         if sign2[0] != 'none' or sign2[0] != 'none_found':        
             cv2.circle(frame_real,(sign2[2]+corner[0],sign2[3]+corner[1]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[0], sign2[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
-            cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[0], sign2[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            if sign2[4] == 'can\'t find':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[0], sign2[3]+corner[1] + 15), font, .6,(255,0,255),1, cv2.CV_AA)
+                cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[0], sign2[3]+corner[1] - 15), font, .6,(255,0,255),1, cv2.CV_AA)
+            elif sign2[4] != 'red':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[0], sign2[3]+corner[1] + 15), font, .6,(0,0,255),1, cv2.CV_AA)
+                cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[0], sign2[3]+corner[1] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            else:
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[0], sign2[3]+corner[1] + 15), font, .6,(255,0,0),1, cv2.CV_AA)
+                cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[0], sign2[3]+corner[1] - 15), font, .6,(255,0,0),1, cv2.CV_AA)            
 
         cv2.putText(frame_real, "Sign2" , (corner[0], corner[1] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
         
@@ -510,8 +541,15 @@ while(cap.isOpened()):
 
         if sign1[0] != 'none' or sign1[0] != 'none_found':        
             cv2.circle(frame_real,(sign1[2]+corner[4],sign1[3]+corner[5]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[4], sign1[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
-            cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[4], sign1[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            if sign1[4] == 'can\'t find':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[4], sign1[3]+corner[5] + 15), font, .6,(255,0,255),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[4], sign1[3]+corner[5] - 15), font, .6,(255,0,255),1, cv2.CV_AA)
+            elif sign1[4] != 'red':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[4], sign1[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[4], sign1[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            else:
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[4], sign1[3]+corner[5] + 15), font, .6,(255,0,0),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[4], sign1[3]+corner[5] - 15), font, .6,(255,0,0),1, cv2.CV_AA)
  
         cv2.putText(frame_real, "Sign1" , (corner[4], corner[5] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     elif (corner[4] > corner[0] and corner[4] > corner[8] and corner[4] != width):
@@ -524,8 +562,15 @@ while(cap.isOpened()):
      
         if sign3[0] != 'none' or sign3[0] != 'none_found':        
             cv2.circle(frame_real,(sign3[2]+corner[4],sign3[3]+corner[5]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[4], sign3[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
-            cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[4], sign3[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA)     
+            if sign3[4] == 'can\'t find':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[4], sign3[3]+corner[5] + 15), font, .6,(255,0,255),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[4], sign3[3]+corner[5] - 15), font, .6,(255,0,255),1, cv2.CV_AA) 
+            elif sign3[4] != 'red':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[4], sign3[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[4], sign3[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA)     
+            else:
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[4], sign3[3]+corner[5] + 15), font, .6,(255,0,0),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[4], sign3[3]+corner[5] - 15), font, .6,(255,0,0),1, cv2.CV_AA)
 
         cv2.putText(frame_real, "Sign3" , (corner[4], corner[5] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     elif (corner[4] != width):
@@ -538,8 +583,15 @@ while(cap.isOpened()):
 
         if sign2[0] != 'none' or sign2[0] != 'none_found':        
             cv2.circle(frame_real,(sign2[2]+corner[4],sign2[3]+corner[5]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[4], sign2[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
-            cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[4], sign2[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            if sign2[4] == 'can\'t find':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[4], sign2[3]+corner[5] + 15), font, .6,(255,0,255),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[4], sign2[3]+corner[5] - 15), font, .6,(255,0,255),1, cv2.CV_AA)
+            elif sign2[4] != 'red':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[4], sign2[3]+corner[5] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[4], sign2[3]+corner[5] - 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+            else:
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[4], sign2[3]+corner[5] + 15), font, .6,(255,0,0),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[4], sign2[3]+corner[5] - 15), font, .6,(255,0,0),1, cv2.CV_AA) 
 
         cv2.putText(frame_real, "Sign2" , (corner[4], corner[5] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
 
@@ -552,8 +604,15 @@ while(cap.isOpened()):
 
         if sign1[0] != 'none' or sign1[0] != 'none_found':        
             cv2.circle(frame_real,(sign1[2]+corner[8],sign1[3]+corner[9]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[8], sign1[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
-            cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[8], sign1[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            if sign1[4] == 'can\'t find':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[8], sign1[3]+corner[9] + 15), font, .6,(255,0,255),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[8], sign1[3]+corner[9] - 15), font, .6,(255,0,255),1, cv2.CV_AA)
+            elif sign1[4] != 'red':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[8], sign1[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[8], sign1[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            else:
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol1,percentage1) , (sign1[2]+corner[8], sign1[3]+corner[9] + 15), font, .6,(255,0,0),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign1[4] , (sign1[2]+corner[8], sign1[3]+corner[9] - 15), font, .6,(255,0,0),1, cv2.CV_AA)                
 
         sign1 =  find_shape(one_a, blank_one, p1, p2, nr, mr, distance_from_center)  
         cv2.putText(frame_real, "Sign1" , (corner[8], corner[9] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
@@ -567,8 +626,15 @@ while(cap.isOpened()):
 
         if sign3[0] != 'none' or sign3[0] != 'none_found':        
             cv2.circle(frame_real,(sign3[2]+corner[8],sign3[3]+corner[9]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[8], sign3[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
-            cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[8], sign3[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            if sign3[4] == 'can\'t find':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[8], sign3[3]+corner[9] + 15), font, .6,(255,0,255),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[8], sign3[3]+corner[9] - 15), font, .6,(255,0,255),1, cv2.CV_AA)    
+            elif sign3[4] != 'red':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[8], sign3[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[8], sign3[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            else:
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol3,percentage3) , (sign3[2]+corner[8], sign3[3]+corner[9] + 15), font, .6,(255,0,0),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign3[4] , (sign3[2]+corner[8], sign3[3]+corner[9] - 15), font, .6,(255,0,0),1, cv2.CV_AA)
  
         cv2.putText(frame_real, "Sign3" , (corner[8], corner[9] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
     elif (corner[8] != width):
@@ -582,8 +648,15 @@ while(cap.isOpened()):
 
         if sign2[0] != 'none' or sign2[0] != 'none_found':        
             cv2.circle(frame_real,(sign2[2]+corner[8],sign2[3]+corner[9]), 2, (255,0,0),-1) 
-            cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[8], sign2[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
-            cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[8], sign2[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            if sign2[4] == 'can\'t find':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[8], sign2[3]+corner[9] + 15), font, .6,(255,0,255),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[8], sign2[3]+corner[9] - 15), font, .6,(255,0,255),1, cv2.CV_AA)            
+            elif sign2[4] != 'red':
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[8], sign2[3]+corner[9] + 15), font, .6,(0,0,255),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[8], sign2[3]+corner[9] - 15), font, .6,(0,0,255),1, cv2.CV_AA)
+            else:
+                cv2.putText(frame_real, "%s (%1.2f)" % (symbol2,percentage2) , (sign2[2]+corner[8], sign2[3]+corner[9] + 15), font, .6,(255,0,0),1, cv2.CV_AA) 
+                cv2.putText(frame_real, sign2[4] , (sign2[2]+corner[8], sign2[3]+corner[9] - 15), font, .6,(255,0,0),1, cv2.CV_AA)
 
         cv2.putText(frame_real, "Sign2" , (corner[8], corner[9] - 5), font, .75,(255,0,255),2, cv2.CV_AA)
 
@@ -597,9 +670,9 @@ while(cap.isOpened()):
     cv2.imshow('one', sign1[1])
     cv2.imshow('three', sign3[1])
     cv2.moveWindow('one', 20, 20)
-    cv2.moveWindow('two', 20, 180)
-    cv2.moveWindow('three', 20, 340)"""
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    cv2.moveWindow('two', 20, 400)
+    cv2.moveWindow('three', 20, 800)"""
+    if cv2.waitKey(100) & 0xFF == ord('q'):
         break
 
 cap.release()
