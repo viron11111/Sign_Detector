@@ -293,8 +293,13 @@ vid = '/home/andy/dock_simulation_vertical.avi'
 vid = 'In_lab_test5.mp4'
 #vid = 'In_lab_test6.mp4'
 #vid = 'In_lab_test7.mp4'
-#vid = 'In_lab_test8.mp4'
+vid = 'In_lab_test8.mp4'
 #vid = 'In_lab_test9.mp4'
+vid = 'In_lab_test10.mp4'
+vid = 'In_lab_test11.mp4'
+vid = 'In_lab_test12.mp4'
+vid = 'In_lab_test13.mp4'
+#vid = 'In_lab_test14.mp4'
 
 cap = cv2.VideoCapture(vid)
 

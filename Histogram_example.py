@@ -15,7 +15,7 @@ vid = 'In_lab_test1.mp4'
 vid = 'In_lab_test2.mp4'
 #vid = 'In_lab_test3.mp4'
 vid = 'In_lab_test4.mp4'
-vid = 'In_lab_test5.mp4'
+#vid = 'In_lab_test5.mp4'
 
 cap = cv2.VideoCapture(vid)
 

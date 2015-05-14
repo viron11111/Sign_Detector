@@ -187,7 +187,7 @@ while(cap.isOpened()):
             corner.append(w)
             corner.append(h)
 
-    cv2.imshow('actual', thresh)
+    cv2.imshow('actual', frame_real)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
