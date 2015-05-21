@@ -295,10 +295,10 @@ vid = 'In_lab_test5.mp4'
 #vid = 'In_lab_test7.mp4'
 vid = 'In_lab_test8.mp4'
 #vid = 'In_lab_test9.mp4'
-vid = 'In_lab_test10.mp4'
-vid = 'In_lab_test11.mp4'
-vid = 'In_lab_test12.mp4'
-vid = 'In_lab_test13.mp4'
+#vid = 'In_lab_test10.mp4'
+#vid = 'In_lab_test11.mp4'
+#vid = 'In_lab_test12.mp4'
+#vid = 'In_lab_test13.mp4'
 #vid = 'In_lab_test14.mp4'
 
 cap = cv2.VideoCapture(vid)
@@ -604,6 +604,7 @@ while(cap.isOpened()):
         one_a = frame[corner[9]:corner[9]+corner[11], corner[8]:corner[8]+corner[10]]
         blank_one = np.zeros((corner[11],corner[10],3), np.uint8)
         blank_one[:,0:corner[10]] = (255,255,255)
+        sign1 = find_shape(one_a, blank_one, p1, p2, nr, mr, distance_from_center) 
 
         symbol1,percentage1,sign1_sum = add_sign(sign1[0], sign1_sum)
 
@@ -677,7 +678,7 @@ while(cap.isOpened()):
     cv2.moveWindow('one', 20, 20)
     cv2.moveWindow('two', 20, 400)
     cv2.moveWindow('three', 20, 800)"""
-    if cv2.waitKey(100) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 cap.release()
